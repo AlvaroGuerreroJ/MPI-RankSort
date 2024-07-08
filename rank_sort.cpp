@@ -31,17 +31,18 @@ int main(int argc, char** argv)
     uint32_t n_rows = 0;
     uint32_t n_cols = 0;
 
-    if (np == 4)
-    {
-        n_rows = 2;
-        n_cols = 2;
-    }
-    else if (np == 12)
-    {
-        n_rows = 3;
-        n_cols = 4;
-    }
-    else
+    std::map<uint32_t, std::pair<uint32_t, uint32_t>> mappings = {
+        { 4, {2, 2}},
+        { 6, {2, 3}},
+        { 8, {2, 4}},
+        { 9, {3, 3}},
+        {10, {2, 5}},
+        {12, {3, 4}},
+    };
+
+    auto mapping_found = mappings.find(np);
+
+    if (mapping_found == mappings.end())
     {
         if (my_rank == 0)
         {
@@ -52,7 +53,15 @@ int main(int argc, char** argv)
         return 0;
     }
 
-    uint32_t const size_per_proc = 16;
+    std::tie(n_rows, n_cols) = mapping_found->second;
+
+    uint32_t target_size = 100000000;
+
+    while (target_size % np != 0)
+    {
+        target_size += 1;
+    }
+    uint32_t const size_per_proc = target_size / np;
 
     // Each process must have enough space to hold a copy of all the elements in
     // his row and column.
