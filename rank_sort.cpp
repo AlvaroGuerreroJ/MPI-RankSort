@@ -90,10 +90,15 @@ int main(int argc, char** argv)
         my_data[i] = rn;
     }
 
+    double time_0 = MPI_Wtime();
+
     uint32_t my_row_end = (my_col + 1) * size_per_proc;
     // std::sort(row_elements + my_row_start, row_elements + my_row_end);
 
+    double time_proc_2_0 = MPI_Wtime();
     std::sort(my_data, my_data + size_per_proc);
+    double time_proc_2_1 = MPI_Wtime();
+    double time_proc_2 = time_proc_2_1 - time_proc_2_0;
 
     // for (uint32_t i = 0; i < size_per_proc; i++)
     // {
@@ -106,20 +111,7 @@ int main(int argc, char** argv)
     MPI_Comm col_comm;
     MPI_Comm_split(MPI_COMM_WORLD, my_col, my_row, &col_comm);
 
-    MPI_Barrier(MPI_COMM_WORLD);
-
-    {
-        int d_rows;
-        MPI_Comm_size(row_comm, &d_rows);
-        int d_cols;
-        MPI_Comm_size(col_comm, &d_cols);
-
-        // printf("R: %d %d\n", n_cols, d_rows);
-        // printf("C: %d %d\n", n_rows, d_cols);
-
-        assert(d_rows == n_cols);
-        assert(d_cols == n_rows);
-    }
+    double time_comm_0_0 = MPI_Wtime();
 
     MPI_Allgather(
         my_data, size_per_proc, MPI_INT, row_elements, size_per_proc, MPI_INT, row_comm);
@@ -127,14 +119,21 @@ int main(int argc, char** argv)
     MPI_Allgather(
         my_data, size_per_proc, MPI_INT, col_elements, size_per_proc, MPI_INT, col_comm);
 
+    double time_comm_0_1 = MPI_Wtime();
+    double time_comm_0 = time_comm_0_1 - time_comm_0_0;
+
     delete[] my_data;
 
+    double time_proc_0_0 = MPI_Wtime();
     std::sort(row_elements, row_elements + n_row_elements);
     std::sort(col_elements, col_elements + n_col_elements);
+    double time_proc_0_1 = MPI_Wtime();
+    double time_proc_0 = time_proc_0_1 - time_proc_0_0;
 
     uint32_t* indexes_for_row = new uint32_t[n_row_elements];
     uint32_t cur_col_index = 0;
 
+    double time_proc_1_0 = MPI_Wtime();
     for (uint32_t i = 0; i < n_row_elements; i++)
     {
         while (cur_col_index < n_col_elements && row_elements[i] > col_elements[cur_col_index])
@@ -143,6 +142,10 @@ int main(int argc, char** argv)
         }
         indexes_for_row[i] = cur_col_index;
     }
+    double time_proc_1_1 = MPI_Wtime();
+    double time_proc_1 = time_proc_1_1 - time_proc_1_0;
+
+    double time_comm_1_0 = MPI_Wtime();
 
     uint32_t* reduced_indexes_for_row = new uint32_t[n_row_elements];
     MPI_Reduce(
@@ -153,6 +156,9 @@ int main(int argc, char** argv)
         MPI_SUM,
         0,
         row_comm);
+
+    double time_comm_1_1 = MPI_Wtime();
+    double time_comm_1 = time_comm_1_1 - time_comm_1_0;
 
     if (my_rank == 0)
     {
@@ -183,6 +189,8 @@ int main(int argc, char** argv)
             std::cout << col_elements[i] << " ";
         }
         std::cout << "\n";
+
+        double time_recreation_0 = MPI_Wtime();
 
         uint32_t total_elements = n_row_elements * n_rows;
         int* all_data = new int[total_elements];
@@ -238,6 +246,12 @@ int main(int argc, char** argv)
                 last_seen = all_data[i];
             }
         }
+
+        double time_recreation_1 = MPI_Wtime();
+        double time_recreation = time_recreation_1 - time_recreation_0;
+
+        double total_time = MPI_Wtime() - time_0;
+
         // MPI_Gather(
         //     row_elements,
         //     static_cast<int>(n_row_elements),
@@ -271,6 +285,18 @@ int main(int argc, char** argv)
         {
             std::cout << "Array of size " << total_elements << " failed sorting\n";
         }
+
+        std::cerr << "Initial sort: " << time_proc_2 << "\n";
+        std::cerr << "Initial gather: " << time_comm_0 << "\n";
+        std::cerr << "Internal sorting: " << time_proc_0 << "\n";
+        std::cerr << "Internal ranking: " << time_proc_1 << "\n";
+        std::cerr << "Reduce ranking: " << time_comm_1 << "\n";
+        std::cerr << "Recreation: " << time_recreation << "\n";
+
+        double accounted_time =
+            time_comm_0 + time_comm_1 + time_proc_0 + time_proc_1 + time_proc_2;
+        std::cerr << "Accounted for: " << accounted_time << "\n";
+        std::cerr << "Total: " << total_time << "\n";
 
         delete[] all_data;
     }
