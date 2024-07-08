@@ -118,6 +118,8 @@ int main(int argc, char** argv)
     MPI_Allgather(
         my_data, size_per_proc, MPI_INT, col_elements, size_per_proc, MPI_INT, col_comm);
 
+    delete[] my_data;
+
     std::sort(row_elements, row_elements + n_row_elements);
     std::sort(col_elements, col_elements + n_col_elements);
 
@@ -207,7 +209,14 @@ int main(int argc, char** argv)
        //          printf("%i %i\n", all_data[i], all_data_indexes[i]);
         //     }
         // }
+
+        delete[] all_data;
     }
+
+    delete[] row_elements;
+    delete[] col_elements;
+    delete[] indexes_for_row;
+    delete[] reduced_indexes_for_row;
 
     MPI_Comm_free(&row_comm);
     MPI_Comm_free(&col_comm);
