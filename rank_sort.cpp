@@ -145,7 +145,7 @@ int main(int argc, char** argv)
         0,
         row_comm);
 
-    if (my_col == 0)
+    if (my_rank == 0)
     {
         printf("Row:\n");
         for (uint32_t i = 0; i < n_row_elements; i++)
@@ -176,12 +176,59 @@ int main(int argc, char** argv)
         std::cout << "\n";
 
         uint32_t total_elements = n_row_elements * n_rows;
-
         int* all_data = new int[total_elements];
-        uint32_t* all_data_indexes = new uint32_t[total_elements];
 
-        // int* all_data_sorted = new int[total_elements];
+        for (uint32_t i = 0; i < total_elements; i++)
+        {
+            all_data[i] = 0;
+        }
 
+        for (uint32_t i = 0; i < n_row_elements; i++)
+        {
+            all_data[reduced_indexes_for_row[i]] = row_elements[i];
+        }
+
+        int* received_row = new int[n_row_elements];
+        uint32_t* received_row_indexes = new uint32_t[n_row_elements];
+
+        for (int i = 1; i < n_rows; i++)
+        {
+            MPI_Recv(
+                received_row,
+                n_row_elements,
+                MPI_INT,
+                i,
+                MPI_ANY_TAG,
+                col_comm,
+                MPI_STATUS_IGNORE);
+
+            MPI_Recv(
+                received_row_indexes,
+                n_row_elements,
+                MPI_UINT32_T,
+                i,
+                MPI_ANY_TAG,
+                col_comm,
+                MPI_STATUS_IGNORE);
+
+            for (uint32_t i = 0; i < n_row_elements; i++)
+            {
+                all_data[received_row_indexes[i]] = received_row[i];
+            }
+        }
+
+        int last_seen = 0;
+        for (uint32_t i = 0; i < total_elements; i++)
+        {
+            if (all_data[i] == 0)
+            {
+                all_data[i] = last_seen;
+            }
+            else
+            {
+                last_seen = all_data[i];
+            }
+        }
         // MPI_Gather(
         //     row_elements,
         //     static_cast<int>(n_row_elements),
@@ -202,15 +249,26 @@ int main(int argc, char** argv)
         //     0,
         //     col_comm);
 
-        // if (my_rank == 0)
-        // {
-        //     for (uint32_t i = 0; i < total_elements; i++)
-        //     {
-       //          printf("%i %i\n", all_data[i], all_data_indexes[i]);
-        //     }
-        // }
+        for (uint32_t i = 0; i < total_elements; i++)
+        {
+            printf("%.3i\t%i\n", i, all_data[i]);
+        }
+
+        if (check_sorted(all_data, total_elements))
+        {
+            std::cout << "Array of size " << total_elements << " sorted properly\n";
+        }
+        else
+        {
+            std::cout << "Array of size " << total_elements << " failed sorting\n";
+        }
 
         delete[] all_data;
+    }
+    else if (my_col == 0)
+    {
+        MPI_Send(row_elements, n_row_elements, MPI_INT, 0, 0, col_comm);
+        MPI_Send(reduced_indexes_for_row, n_row_elements, MPI_UINT32_T, 0, 0, col_comm);
     }
 
     delete[] row_elements;
