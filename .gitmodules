@@ -1,0 +1,3 @@
+[submodule "Parallel-MPI-QuickSort"]
+	path = Parallel-MPI-QuickSort
+	url = https://github.com/ajdsouza/Parallel-MPI-QuickSort.git
