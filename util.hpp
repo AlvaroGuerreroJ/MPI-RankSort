@@ -1,6 +1,7 @@
 #pragma once
 
-inline bool check_sorted(int* arr, int size)
+template<typename T>
+bool check_sorted(T* arr, int size)
 {
     for (int i = 0; i < size - 1; i++)
     {
