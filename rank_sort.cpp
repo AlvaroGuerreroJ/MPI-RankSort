@@ -259,31 +259,6 @@ int main(int argc, char** argv)
 
         double total_time = MPI_Wtime() - time_0;
 
-        // MPI_Gather(
-        //     row_elements,
-        //     static_cast<int>(n_row_elements),
-        //     MPI_INT,
-        //     all_data,
-        //     static_cast<int>(total_elements),
-        //     MPI_INT,
-        //     0,
-        //     col_comm);
-
-        // MPI_Gather(
-        //     reduced_indexes_for_row,
-        //     n_row_elements,
-        //     MPI_UINT32_T,
-        //     all_data_indexes,
-        //     total_elements,
-        //     MPI_UINT32_T,
-        //     0,
-        //     col_comm);
-
-        for (uint32_t i = 0; i < total_elements; i++)
-        {
-            printf("%.3i\t%i\n", i, all_data[i]);
-        }
-
         if (check_sorted(all_data, total_elements))
         {
             std::cout << "Array of size " << total_elements << " sorted properly\n";
