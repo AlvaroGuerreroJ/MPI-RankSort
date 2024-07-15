@@ -55,7 +55,14 @@ int main(int argc, char** argv)
 
     std::tie(n_rows, n_cols) = mapping_found->second;
 
-    uint32_t target_size = 100000000;
+    if (argc != 2)
+    {
+        std::cerr << "Usage: " << argv[0] << " "
+                  << " N-ELEMENS\n";
+        return 1;
+    }
+
+    uint32_t target_size = std::stoul(argv[1]);
 
     while (target_size % np != 0)
     {
@@ -162,33 +169,33 @@ int main(int argc, char** argv)
 
     if (my_rank == 0)
     {
-        printf("Row:\n");
-        for (uint32_t i = 0; i < n_row_elements; i++)
-        {
-            std::cout << row_elements[i] << " ";
-        }
-        std::cout << "\n";
+        // printf("Row:\n");
+        // for (uint32_t i = 0; i < n_row_elements; i++)
+        // {
+        //     std::cout << row_elements[i] << " ";
+        // }
+        // std::cout << "\n";
 
-        printf("Row indexes:\n");
-        for (uint32_t i = 0; i < n_row_elements; i++)
-        {
-            std::cout << indexes_for_row[i] << " ";
-        }
-        std::cout << "\n";
+        // printf("Row indexes:\n");
+        // for (uint32_t i = 0; i < n_row_elements; i++)
+        // {
+        //     std::cout << indexes_for_row[i] << " ";
+        // }
+        // std::cout << "\n";
 
-        printf("Reduced row indexes:\n");
-        for (uint32_t i = 0; i < n_row_elements; i++)
-        {
-            std::cout << reduced_indexes_for_row[i] << " ";
-        }
-        std::cout << "\n";
+        // printf("Reduced row indexes:\n");
+        // for (uint32_t i = 0; i < n_row_elements; i++)
+        // {
+        //     std::cout << reduced_indexes_for_row[i] << " ";
+        // }
+        // std::cout << "\n";
 
-        printf("Col:\n");
-        for (uint32_t i = 0; i < n_col_elements; i++)
-        {
-            std::cout << col_elements[i] << " ";
-        }
-        std::cout << "\n";
+        // printf("Col:\n");
+        // for (uint32_t i = 0; i < n_col_elements; i++)
+        // {
+        //     std::cout << col_elements[i] << " ";
+        // }
+        // std::cout << "\n";
 
         double time_recreation_0 = MPI_Wtime();
 
